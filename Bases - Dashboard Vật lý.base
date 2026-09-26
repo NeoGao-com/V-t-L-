@@ -1,0 +1,116 @@
+filters:
+  and:
+    - file.ext == "md"
+    - file.path.startsWith("Vật lý/")
+    - not:
+        - file.path.contains("/_Templates")
+    - not:
+        - file.hasTag("vật-lý/công-cụ")
+formulas:
+  tuoi_ngay: if(created, (today() - date(created)).days, "")
+  thieu_domain: if(type != "toán-học" && type != "moc" && type != "lộ-trình" && type != "công-cụ", !domain || domain == "phải-điền", false)
+properties:
+  type:
+    displayName: Trụ
+  file.folder:
+    displayName: Thư mục
+  note["trạng-thái"]:
+    displayName: Trạng thái
+  formula.tuoi_ngay:
+    displayName: Tuổi (ngày)
+views:
+  - type: table
+    name: Toàn cảnh
+    groupBy:
+      property: type
+      direction: ASC
+    order:
+      - file.name
+      - domain
+      - note["trạng-thái"]
+      - created
+      - formula.tuoi_ngay
+    sort:
+      - property: note["trạng-thái"]
+        direction: DESC
+      - property: created
+        direction: DESC
+    summaries:
+      file.name: Filled
+  - type: table
+    name: Phân ngành
+    filters:
+      and:
+        - domain && domain != "phải-điền"
+    groupBy:
+      property: domain
+      direction: ASC
+    order:
+      - type
+      - note["trạng-thái"]
+      - file.name
+    summaries:
+      file.name: Filled
+  - type: table
+    name: Thực nghiệm
+    filters:
+      and:
+        - type == "thực-nghiệm"
+    order:
+      - note["loại"]
+      - domain
+      - note["trạng-thái"]
+      - file.name
+    summaries:
+      file.name: Filled
+  - type: table
+    name: Nhân vật & Lịch sử
+    filters:
+      or:
+        - type == "nhân-vật"
+        - type == "lịch-sử"
+    order:
+      - note["trạng-thái"]
+      - domain
+      - file.name
+    summaries:
+      file.name: Filled
+  - type: cards
+    name: Cần chăm
+    filters:
+      or:
+        - note["trạng-thái"] == "mầm"
+        - note["trạng-thái"] == "đang-phát-triển"
+    order:
+      - type
+      - domain
+      - file.name
+    limit: 50
+  - type: table
+    name: Mới gieo
+    filters:
+      and:
+        - created >= today() - "30d"
+    order:
+      - formula.tuoi_ngay
+      - file.name
+    limit: 30
+    summaries:
+      file.name: Filled
+  - type: list
+    name: Mồ côi
+    filters:
+      and:
+        - file.backlinks.isEmpty()
+    order:
+      - file.folder
+      - file.name
+  - type: table
+    name: Thiếu domain
+    filters:
+      and:
+        - formula.thieu_domain == true
+    order:
+      - type
+      - domain
+      - file.name
